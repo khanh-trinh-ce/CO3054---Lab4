@@ -85,14 +85,15 @@ void zeroIdTaskHandler()
             {
                 xQueueReceive(queue, (void*)&rxFrame,(TickType_t)5);
                 printf("[ID 0 Task Handler] Event handler 0 called and executed. Value is: %d\n", rxFrame.val);
+                vTaskDelay(1000 / portTICK_RATE_MS);
             }
             else
             {
                 printf("[ID 0 Task Handler] Event handler 0 called but not executed.\n");
             }
-            vTaskDelay(1000 / portTICK_RATE_MS);
+
         }
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        // vTaskDelay(1000 / portTICK_RATE_MS);
     }
     
 }

@@ -6,9 +6,11 @@
 // We need this to use queues.
 #include "freertos/queue.h"
 #include "sdkconfig.h"
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include "esp_log.h"
 
 QueueHandle_t queue;
-
+static const char* TAG = "Lab4";
 // This struct represents a request.
 typedef struct 
 {
@@ -32,14 +34,17 @@ Frame NewFrame(uint32_t id, uint32_t value)
 // added to the queue or not.
 void sendRequest(QueueHandle_t q, Frame f)
 {
-    printf("[Request Sender] Creating request with ID %d, value %d.\n", f.id, f.val);
+    // printf("At %dms: [Request Sender] Creating request with ID %d, value %d.\n", pdTICKS_TO_MS(xTaskGetTickCount()), f.id, f.val);
+    ESP_LOGI(TAG, "At %dms: [Request Sender] Creating request with ID %d, value %d.\n", pdTICKS_TO_MS(xTaskGetTickCount()), f.id, f.val);
     if (xQueueSend(q, (void*)&f, (TickType_t)0) != pdTRUE)
     {
-        printf("[Request Sender] Cannot send request because the queue is full.\n");
+        // printf("At %dms: [Request Sender] Cannot send request because the queue is full.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
+        ESP_LOGI(TAG, "At %dms: [Request Sender] Cannot send request because the queue is full.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
     }
     else
     {
-        printf("[Request Sender] Sent request successfully.\n");
+        // printf("At %dms: [Request Sender] Sent request successfully.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
+        ESP_LOGI(TAG, "At %dms: [Request Sender] Sent request successfully.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
     }
 }
 
@@ -84,16 +89,17 @@ void zeroIdTaskHandler()
             if (rxFrame.id == 0)
             {
                 xQueueReceive(queue, (void*)&rxFrame,(TickType_t)5);
-                printf("[ID 0 Task Handler] Event handler 0 called and executed. Value is: %d\n", rxFrame.val);
-                vTaskDelay(1000 / portTICK_RATE_MS);
+                // printf("At %dms: [ID 0 Task Handler] Event handler 0 called and executed. Value is: %d\n", pdTICKS_TO_MS(xTaskGetTickCount()), rxFrame.val);
+                ESP_LOGI(TAG, "At %dms: [ID 0 Task Handler] Event handler 0 called and executed. Value is: %d\n", pdTICKS_TO_MS(xTaskGetTickCount()), rxFrame.val);
             }
             else
             {
-                printf("[ID 0 Task Handler] Event handler 0 called but not executed.\n");
+                // printf("At %dms: [ID 0 Task Handler] Event handler 0 called but not executed.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
+                ESP_LOGI(TAG, "At %dms: [ID 0 Task Handler] Event handler 0 called but not executed.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
+                vTaskDelay(1000 / portTICK_RATE_MS);
             }
-
+            
         }
-        // vTaskDelay(1000 / portTICK_RATE_MS);
     }
     
 }
@@ -110,23 +116,25 @@ void oneIdTaskHandler()
             if (rxFrame.id == 1)
             {
                 xQueueReceive(queue, (void*)&rxFrame,(TickType_t)5);
-                printf("[ID 1 Task Handler] Event handler 1 called and executed. Value is: %d\n", rxFrame.val);
+                // printf("At %dms: [ID 1 Task Handler] Event handler 1 called and executed. Value is: %d\n", pdTICKS_TO_MS(xTaskGetTickCount()), rxFrame.val);
+                ESP_LOGI(TAG, "At %dms: [ID 1 Task Handler] Event handler 1 called and executed. Value is: %d\n", pdTICKS_TO_MS(xTaskGetTickCount()), rxFrame.val);
             }
             else
             {
-                printf("[ID 1 Task Handler] Event handler 1 called but not executed.\n");
+                // printf("At %dms: [ID 1 Task Handler] Event handler 1 called but not executed.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
+                ESP_LOGI(TAG, "At %dms: [ID 1 Task Handler] Event handler 1 called but not executed.\n", pdTICKS_TO_MS(xTaskGetTickCount()));
                 xQueueReceive(queue, (void*)&rxFrame, (TickType_t)5);
-                printf("[ID 1 Task Handler] Discarded invalid frame with ID %d.\n", rxFrame.id);
+                // printf("At %dms: [ID 1 Task Handler] Discarded invalid frame with ID %d.\n", pdTICKS_TO_MS(xTaskGetTickCount()), rxFrame.id);
+                ESP_LOGI(TAG, "At %dms: [ID 1 Task Handler] Discarded invalid frame with ID %d.\n", pdTICKS_TO_MS(xTaskGetTickCount()), rxFrame.id);
             }
             vTaskDelay(1000 / portTICK_RATE_MS);
         }
-        vTaskDelay(1000 / portTICK_RATE_MS);
-    }
-    
+    }  
 }
 
 void app_main(void)
 {
+    esp_log_level_set(TAG, ESP_LOG_INFO);
     xTaskCreatePinnedToCore(generateRequest, "generateRqeust", 4096, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(zeroIdTaskHandler, "zeroIdTaskHandler", 4096, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(oneIdTaskHandler, "oneIdTaskHandler", 4096, NULL, 1, NULL, 0);
